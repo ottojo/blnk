@@ -26,13 +26,18 @@ type NeoClient struct {
 	Strip   neoPixel.NeoPixelStrip
 }
 
-func (n NeoClient) SetLeds(colors []color.Color8bit) {
+func (n NeoClient) Commit() {
 	if n.Conn == nil {
 		var err error
 		n.Conn, err = net.Dial("tcp", n.Address)
 		if err != nil {
 			log.Println(err)
 		}
+	}
+
+	colors := make([]color.Color8bit, len(n.Strip.NeoPixels))
+	for i, n := range n.Strip.NeoPixels {
+		colors[i] = n.Color()
 	}
 	m := setPixelsMessage(colors)
 	n.Conn.Write(m)

@@ -16,6 +16,18 @@ type ClientFile []struct {
 	PixelsPerMeter float64     `json:"pixelsPerMeter"`
 }
 
+// TODO: assign host+port automatically if running with simulator
+/*
+func ReadSimClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
+	cls, err := ReadClientsFromFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	for i, _ := range cls {
+		cls[i].Address="localhost:"+port
+	}
+}*/
+
 func ReadClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
 	var c ClientFile
 	f, err := ioutil.ReadFile(filename)
@@ -28,9 +40,13 @@ func ReadClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
 	}
 	var clients []blnkProtocol.NeoClient
 	for _, cl := range c {
-		clients = append(clients, blnkProtocol.NeoClient{ID: cl.ID, Address: cl.Address,
+		newClient := blnkProtocol.NeoClient{ID: cl.ID, Address: cl.Address,
 			Strip: neoPixel.NeoPixelStrip{
-				PixelsPerMeter: cl.PixelsPerMeter, StartPosition: cl.StartPosition, EndPosition: cl.EndPosition}})
+				PixelsPerMeter: cl.PixelsPerMeter, StartPosition: cl.StartPosition, EndPosition: cl.EndPosition}}
+
+		newClient.Strip.NeoPixels = make([]neoPixel.NeoPixel, int(cl.EndPosition.Minus(cl.StartPosition).Length()*cl.PixelsPerMeter/100))
+
+		clients = append(clients, newClient)
 	}
 	return clients, nil
 }
