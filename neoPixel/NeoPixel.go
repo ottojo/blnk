@@ -16,7 +16,11 @@ func NewNeoPixelStrip(start, end vector.Vec3, ppm float64) NeoPixelStrip {
 	n := NeoPixelStrip{
 		interPixelDistance: 1 / ppm, StartPosition: start, EndPosition: end}
 
-	n.NeoPixels = make([]NeoPixel, int(end.Minus(start).Length()*ppm/100))
+	n.NeoPixels = make([]NeoPixel, int(end.Minus(start).Length()*ppm))
+	for i := 0; i < len(n.NeoPixels); i++ {
+		n.NeoPixels[i].s = &n
+		n.NeoPixels[i].i = i
+	}
 
 	return n
 }

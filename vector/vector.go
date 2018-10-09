@@ -2,7 +2,7 @@ package vector
 
 import "math"
 
-// Here, 1 unit usually represents 1cm IRL.
+// Here, 1 unit usually represents 1m IRL.
 
 type Vec3 struct {
 	X float64 `json:"x"`
@@ -34,28 +34,10 @@ func (v Vec3) ScaleToLength(l float64) Vec3 {
 	return v.Normalize().Times(l)
 }
 
-func (v Vec3) CrossProduct(v2 Vec3) Vec3 {
-	return Vec3{
-		v.Y*v2.Z + v2.Y*v.Z,
-		v.Z*v2.X + v2.Z*v.X,
-		v.X*v2.Y + v2.X*v.Y,
-	}
+func (v Vec3) Phi() float64 {
+	return math.Atan2(v.Y, v.X)
 }
 
-func (v Vec3) RotateX(alpha float64) Vec3 {
-	return Vec3{v.X,
-		v.Y*math.Cos(alpha) - v.Z*math.Sin(alpha),
-		v.Y*math.Sin(alpha) + v.Z*math.Cos(alpha)}
-}
-
-func (v Vec3) RotateY(alpha float64) Vec3 {
-	return Vec3{v.X*math.Cos(alpha) + v.Z*math.Sin(alpha),
-		v.Y,
-		-v.X*math.Sin(alpha) + v.Z*math.Cos(alpha)}
-}
-
-func (v Vec3) RotateZ(alpha float64) Vec3 {
-	return Vec3{v.X*math.Cos(alpha) - v.Z*math.Sin(alpha),
-		v.X*math.Sin(alpha) + v.Y*math.Cos(alpha),
-		v.Z}
+func (v Vec3) Theta() float64 {
+	return math.Acos(v.Z / v.Length())
 }

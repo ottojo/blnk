@@ -41,11 +41,7 @@ func ReadClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
 	var clients []blnkProtocol.NeoClient
 	for _, cl := range c {
 		newClient := blnkProtocol.NeoClient{ID: cl.ID, Address: cl.Address,
-			Strip: neoPixel.NeoPixelStrip{
-				PixelsPerMeter: cl.PixelsPerMeter, StartPosition: cl.StartPosition, EndPosition: cl.EndPosition}}
-
-		newClient.Strip.NeoPixels = make([]neoPixel.NeoPixel, int(cl.EndPosition.Minus(cl.StartPosition).Length()*cl.PixelsPerMeter/100))
-
+			Strip: neoPixel.NewNeoPixelStrip(cl.StartPosition, cl.EndPosition, cl.PixelsPerMeter)}
 		clients = append(clients, newClient)
 	}
 	return clients, nil
