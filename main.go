@@ -1,11 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/ottojo/blnkServer/blnkProtocol"
 	"github.com/ottojo/blnkServer/color"
 	"github.com/ottojo/blnkServer/vector"
+	"image"
+	"image/gif"
 	"log"
 	"math"
+	"os"
+	"time"
 )
 
 func main() {
@@ -26,6 +31,21 @@ func main() {
 		c.Commit()
 	}*/
 
+	f, err := os.Open("g.gif")
+
+	g, err := gif.DecodeAll(f)
+
+	for true {
+		for i, im := range g.Image {
+			fmt.Println(i)
+			go RenderBitmap(im, clients, vector.Vec3{-5, -5, 1.8},
+				vector.Vec3{1, 1, 0.1},
+				0.25*math.Pi)
+
+			time.Sleep(time.Duration(g.Delay[i]*10 ) * time.Millisecond)
+		}
+	} /*
+
 	// G B
 	// R T
 	RenderBitmap(
@@ -34,18 +54,25 @@ func main() {
 			{color.Color8bit{0, 0, 255}, color.Color8bit{0, 255, 255}},
 		},
 		clients,
-		vector.Vec3{0, 0.2, 0}, vector.Vec3{1.5, 1, 0.3},
-		0.3*math.Pi)
+		vector.Vec3{-5, -5, 1.8},
+		vector.Vec3{1, 1, 0.1},
+		0.25*math.Pi)
 	for _, c := range clients {
 		c.Commit()
-	}
+	}*/
 }
 
 // Right handed coordinate system, Z=UP
 // TODO: Find out why image is mirrored
-func RenderBitmap(bmp [][]color.Color8bit, clients []blnkProtocol.NeoClient, pStart vector.Vec3, pDir vector.Vec3, horizontalAngle float64) {
+func RenderBitmap(bmp image.Image, clients []blnkProtocol.NeoClient, pStart vector.Vec3, pDir vector.Vec3, horizontalAngle float64) {
+
+	bmp.Bounds()
+
+	imageWidth := bmp.Bounds().Max.X - bmp.Bounds().Min.X
+	imageHeight := bmp.Bounds().Max.Y - bmp.Bounds().Min.Y
+
 	w := 2 * math.Tan(horizontalAngle/2)
-	h := w * (float64(len(bmp[0])) / float64(len(bmp)))
+	h := w * (float64(imageHeight) / float64(imageWidth))
 
 	for clientIndex := 0; clientIndex < len(clients); clientIndex++ {
 		for pixelIndex := 0; pixelIndex < len(clients[clientIndex].Strip.NeoPixels); pixelIndex++ {
@@ -68,15 +95,21 @@ func RenderBitmap(bmp [][]color.Color8bit, clients []blnkProtocol.NeoClient, pSt
 			}
 
 			x := (w / 2) - math.Tan(phi)
-			x = float64(len(bmp)) * (x / w)
+			x = float64(imageWidth) * (x / w)
 
 			y := (h / 2) - math.Tan(theta)
-			y = float64(len(bmp[0])) * (y / h)
+			y = float64(imageHeight) * (y / h)
 
-			if x < 0 || y < 0 || int(x) >= len(bmp) || int(y) >= len(bmp[0]) {
+			if x < 0 || y < 0 || int(x) >= imageWidth || int(y) >= imageHeight {
 				continue
 			}
-			clients[clientIndex].Strip.NeoPixels[pixelIndex].SetColor(bmp[int(x)][int(y)])
+			r, g, b, _ := bmp.At(int(x), int(y)).RGBA()
+			rB := byte((float64(r) / float64(0xffff)) * 255)
+			gB := byte((float64(g) / float64(0xffff)) * 255)
+			bB := byte((float64(b) / float64(0xffff)) * 255)
+
+			clients[clientIndex].Strip.NeoPixels[pixelIndex].SetColor(color.Color8bit{R: rB, G: gB, B: bB})
 		}
+		clients[clientIndex].Commit()
 	}
 }
