@@ -1,19 +1,19 @@
 package neoPixel
 
 import (
-	"github.com/ottojo/blnkServer/color"
-	"github.com/ottojo/blnkServer/vector"
+	"github.com/ottojo/blnk/color"
+	"github.com/ottojo/blnk/vector"
 )
 
-type NeoPixelStrip struct {
+type Strip struct {
 	StartPosition      vector.Vec3
 	EndPosition        vector.Vec3
 	NeoPixels          []NeoPixel
 	interPixelDistance float64
 }
 
-func NewNeoPixelStrip(start, end vector.Vec3, ppm float64) NeoPixelStrip {
-	n := NeoPixelStrip{
+func NewNeoPixelStrip(start, end vector.Vec3, ppm float64) Strip {
+	n := Strip{
 		interPixelDistance: 1 / ppm, StartPosition: start, EndPosition: end}
 
 	n.NeoPixels = make([]NeoPixel, int(end.Minus(start).Length()*ppm))
@@ -25,14 +25,14 @@ func NewNeoPixelStrip(start, end vector.Vec3, ppm float64) NeoPixelStrip {
 	return n
 }
 
-func (s NeoPixelStrip) Length() int {
+func (s Strip) Length() int {
 	return len(s.NeoPixels)
 }
 
 type NeoPixel struct {
 	i     int
 	color color.Color8bit
-	s     *NeoPixelStrip
+	s     *Strip
 }
 
 func (n *NeoPixel) SetColor(c color.Color8bit) {

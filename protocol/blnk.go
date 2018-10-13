@@ -1,8 +1,8 @@
-package blnkProtocol
+package protocol
 
 import (
-	"github.com/ottojo/blnkServer/color"
-	"github.com/ottojo/blnkServer/neoPixel"
+	"github.com/ottojo/blnk/color"
+	"github.com/ottojo/blnk/neoPixel"
 	"log"
 	"net"
 )
@@ -23,10 +23,10 @@ type NeoClient struct {
 	ID      string
 	Address string
 	Conn    net.Conn
-	Strip   neoPixel.NeoPixelStrip
+	Strip   neoPixel.Strip
 }
 
-func (n NeoClient) Commit() {
+func (n *NeoClient) Commit() {
 	if n.Conn == nil {
 		var err error
 		n.Conn, err = net.Dial("tcp", n.Address)
@@ -40,5 +40,14 @@ func (n NeoClient) Commit() {
 		colors[i] = n.Color()
 	}
 	m := setPixelsMessage(colors)
-	n.Conn.Write(m)
+	_, err := n.Conn.Write(m)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func (n *NeoClient) Disconnect() {
+	if n.Conn != nil {
+		n.Conn.Close()
+	}
 }

@@ -1,10 +1,10 @@
-package main
+package storage
 
 import (
 	"encoding/json"
-	"github.com/ottojo/blnkServer/blnkProtocol"
-	"github.com/ottojo/blnkServer/neoPixel"
-	"github.com/ottojo/blnkServer/vector"
+	"github.com/ottojo/blnk/protocol"
+	"github.com/ottojo/blnk/neoPixel"
+	"github.com/ottojo/blnk/vector"
 	"io/ioutil"
 )
 
@@ -18,7 +18,7 @@ type ClientFile []struct {
 
 // TODO: assign host+port automatically if running with simulator
 /*
-func ReadSimClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
+func ReadSimClientsFromFile(filename string) ([]protocol.NeoClient, error) {
 	cls, err := ReadClientsFromFile(filename)
 	if err != nil {
 		return nil, err
@@ -28,21 +28,31 @@ func ReadSimClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
 	}
 }*/
 
-func ReadClientsFromFile(filename string) ([]blnkProtocol.NeoClient, error) {
-	var c ClientFile
+func ReadClientsFromFile(filename string) ([]*protocol.NeoClient, error) {
 	f, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(f, &c)
+
+	c, err := DecodeClients(f)
 	if err != nil {
 		return nil, err
 	}
-	var clients []blnkProtocol.NeoClient
+
+	return c, nil
+}
+
+func DecodeClients(data []byte) ([]*protocol.NeoClient, error) {
+	var c ClientFile
+	err := json.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+	var clients []*protocol.NeoClient
 	for _, cl := range c {
-		newClient := blnkProtocol.NeoClient{ID: cl.ID, Address: cl.Address,
+		newClient := protocol.NeoClient{ID: cl.ID, Address: cl.Address,
 			Strip: neoPixel.NewNeoPixelStrip(cl.StartPosition, cl.EndPosition, cl.PixelsPerMeter)}
-		clients = append(clients, newClient)
+		clients = append(clients, &newClient)
 	}
 	return clients, nil
 }
