@@ -17,6 +17,7 @@ type ClientFile []struct {
 }
 
 // TODO: assign host+port automatically if running with simulator
+
 /*
 func ReadSimClientsFromFile(filename string) ([]protocol.NeoClient, error) {
 	cls, err := ReadClientsFromFile(filename)

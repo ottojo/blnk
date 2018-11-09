@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func setPixelsMessage(colors []color.Color8bit) []byte {
+func SetPixelsMessage(colors []color.Color8bit) BlnkPacket {
 	var message = make([]byte, 3*len(colors))
 	for i, c := range colors {
 		message[3*i] = c.R
@@ -16,7 +16,26 @@ func setPixelsMessage(colors []color.Color8bit) []byte {
 
 	}
 	message = append([]byte{1}, message...)
-	return append([]byte{0xaf, byte(len(message) >> 8), byte(len(message))}, message...)
+	return newPacket(message)
+}
+
+func SetIntervalMessage(colors []color.Color8bit, startIndex int) BlnkPacket {
+	var message = make([]byte, 3*len(colors)+2)
+	message[0] = byte(startIndex >> 8)
+	message[1] = byte(startIndex)
+	for i, c := range colors {
+		message[3*i+2] = c.R
+		message[3*i+3] = c.G
+		message[3*i+4] = c.B
+	}
+	message = append([]byte{2}, message...)
+	return newPacket(message)
+}
+
+type BlnkPacket []byte
+
+func newPacket(payload []byte) BlnkPacket {
+	return append([]byte{0xaf, byte(len(payload) >> 8), byte(len(payload))}, payload...)
 }
 
 type NeoClient struct {
@@ -39,7 +58,7 @@ func (n *NeoClient) Commit() {
 	for i, n := range n.Strip.NeoPixels {
 		colors[i] = n.Color()
 	}
-	m := setPixelsMessage(colors)
+	m := SetPixelsMessage(colors)
 	_, err := n.Conn.Write(m)
 	if err != nil {
 		log.Println(err)
@@ -51,3 +70,4 @@ func (n *NeoClient) Disconnect() {
 		n.Conn.Close()
 	}
 }
+

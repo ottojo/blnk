@@ -30,9 +30,13 @@ func (s Strip) Length() int {
 }
 
 type NeoPixel struct {
-	i     int
 	color color.Color8bit
-	s     *Strip
+	next  *NeoPixel
+}
+
+type NeoPixelList struct {
+	first  *NeoPixel
+	length int
 }
 
 func (n *NeoPixel) SetColor(c color.Color8bit) {
