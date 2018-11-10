@@ -2,57 +2,58 @@ package storage
 
 import (
 	"encoding/json"
-	"github.com/ottojo/blnk/protocol"
-	"github.com/ottojo/blnk/neoPixel"
-	"github.com/ottojo/blnk/vector"
+	"github.com/ottojo/blnk2/client"
+	"github.com/ottojo/blnk2/vector"
 	"io/ioutil"
 )
 
 type ClientFile []struct {
-	ID             string      `json:"id"`
-	Address        string      `json:"address"`
-	StartPosition  vector.Vec3 `json:"startPosition"`
-	EndPosition    vector.Vec3 `json:"endPosition"`
-	PixelsPerMeter float64     `json:"pixelsPerMeter"`
+	ID     string `json:"id"`
+	Strips []struct {
+		StartPosition  vector.Vec3 `json:"startPosition"`
+		EndPosition    vector.Vec3 `json:"endPosition"`
+		PixelsPerMeter int         `json:"pixelsPerMeter"`
+	} `json:"strips"`
 }
 
-// TODO: assign host+port automatically if running with simulator
-/*
-func ReadSimClientsFromFile(filename string) ([]protocol.NeoClient, error) {
-	cls, err := ReadClientsFromFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	for i, _ := range cls {
-		cls[i].Address="localhost:"+port
-	}
-}*/
-
-func ReadClientsFromFile(filename string) ([]*protocol.NeoClient, error) {
+func ReadClientsFromFile(filename string) ([]client.Client, [][]client.Led, error) {
 	f, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	c, err := DecodeClients(f)
+	c, leds, err := DecodeClients(f)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return c, nil
+	return c, leds, nil
 }
 
-func DecodeClients(data []byte) ([]*protocol.NeoClient, error) {
+func DecodeClients(data []byte) ([]client.Client, [][]client.Led, error) {
 	var c ClientFile
 	err := json.Unmarshal(data, &c)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	var clients []*protocol.NeoClient
+	var clients []client.Client
+	var leds [][]client.Led
 	for _, cl := range c {
-		newClient := protocol.NeoClient{ID: cl.ID, Address: cl.Address,
-			Strip: neoPixel.NewNeoPixelStrip(cl.StartPosition, cl.EndPosition, cl.PixelsPerMeter)}
-		clients = append(clients, &newClient)
+		var clientLeds []client.Led
+		var clientLength = 0
+		for _, s := range cl.Strips {
+			var meterPerPixel float64 = 1 / float64(s.PixelsPerMeter)
+			sLength := int(s.EndPosition.Minus(s.StartPosition).Length() * float64(s.PixelsPerMeter))
+			clientLength += sLength
+			for i := 0; i < sLength; i++ {
+				clientLeds = append(clientLeds, client.Led{
+					Position: s.StartPosition.Plus(
+						s.EndPosition.Minus(s.StartPosition).Normalize().Times(meterPerPixel * float64(i)))})
+			}
+		}
+		newClient := client.Client{Length: clientLength, Id: cl.ID}
+		leds = append(leds, clientLeds)
+		clients = append(clients, newClient)
 	}
-	return clients, nil
+	return clients, leds, nil
 }
