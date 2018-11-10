@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/ottojo/blnk2/vector"
+	"log"
 	"net"
 )
 
@@ -22,7 +23,7 @@ type Client struct {
 	Opt           Optimization
 	Address       string
 	Id            string
-	Connecting    bool
+	connecting    bool
 }
 
 type LedList struct {
@@ -77,4 +78,22 @@ type LedListElement struct {
 type Led struct {
 	Color    colorful.Color
 	Position vector.Vec3
+}
+
+func (c *Client) Connect() {
+	if c.Socket == nil && c.Address != "" && !c.connecting {
+		c.connecting = true
+		var err error
+		log.Printf("%s connecting to %s\n", c.Id, c.Address)
+		c.Socket, err = net.Dial("tcp", c.Address)
+		LogError(err)
+		c.connecting = false
+
+	}
+}
+
+func LogError(err error) {
+	if err != nil {
+		log.Println(err)
+	}
 }

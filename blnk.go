@@ -46,7 +46,7 @@ func (b *BlnkSystem) Commit() {
 			var err error
 			c.Socket, err = net.Dial("tcp", c.Address)
 			LogError(err)
-			//return
+			continue
 		}
 
 		switch c.Opt {
@@ -157,14 +157,7 @@ func (bl *BlnkSystem) Discovery() {
 
 func (bl *BlnkSystem) Connect() {
 	for _, c := range bl.Clients {
-		if c.Socket == nil && c.Address != "" && !c.Connecting {
-			c.Connecting = true
-			var err error
-			log.Printf("%s connecting to %s\n", c.Id, c.Address)
-			c.Socket, err = net.Dial("tcp", c.Address)
-			LogError(err)
-			c.Connecting = false
-		}
+		c.Connect()
 	}
 }
 
