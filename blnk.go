@@ -39,16 +39,7 @@ func CreateFromFile(filename string) BlnkSystem {
 }
 
 func (b *BlnkSystem) Commit() {
-	for i := 0; i < len(b.Clients); i++ {
-		c := b.Clients[i]
-
-		if c.Socket == nil {
-			var err error
-			c.Socket, err = net.Dial("tcp", c.Address)
-			LogError(err)
-			continue
-		}
-
+	for _, c := range b.Clients {
 		switch c.Opt {
 		case client.NONE:
 
@@ -61,8 +52,13 @@ func (b *BlnkSystem) Commit() {
 				led = led.Next
 			}
 			if c.Socket != nil {
-				log.Println("Sending data to " + c.Id)
-				c.Socket.Write(protocol.SetPixelsMessage(c.FirstLed, c.Length))
+				_, err := c.Socket.Write(protocol.SetPixelsMessage(c.FirstLed, c.Length))
+				if err != nil {
+					log.Println("Error writing despite socket != nil:")
+					log.Println(err)
+					log.Println("Disconnecting " + c.Id)
+					c.Socket = nil
+				}
 			}
 			break
 		case client.PREVENTDUPLICATE:
@@ -144,12 +140,25 @@ func (bl *BlnkSystem) Discovery() {
 		for clientIndex := range bl.Clients {
 			if m[0] == bl.Clients[clientIndex].Id {
 				newAddress := src.IP.String() + ":" + m[1]
-				if bl.Clients[clientIndex].Address != newAddress {
-					log.Printf("%s now has ip %s\n", bl.Clients[clientIndex].Id, newAddress)
-					bl.Clients[clientIndex].Address = newAddress
-					bl.Clients[clientIndex].Socket = nil
-					bl.Connect()
+				log.Printf("%s now has ip %s\n", bl.Clients[clientIndex].Id, newAddress)
+				bl.Clients[clientIndex].Address = newAddress
+				if bl.Clients[clientIndex].Socket != nil {
+					bl.Clients[clientIndex].Socket.Close()
 				}
+				bl.Clients[clientIndex].Socket = nil
+				bl.Clients[clientIndex].Connect()
+			}
+		}
+	}
+}
+
+func (bl *BlnkSystem) WaitForDiscovery() {
+	done := false
+	for !done {
+		done = true
+		for _, c := range bl.Clients {
+			if c.Socket == nil || c.Address == "" || c.Connecting {
+				done = false
 			}
 		}
 	}

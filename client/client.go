@@ -23,7 +23,7 @@ type Client struct {
 	Opt           Optimization
 	Address       string
 	Id            string
-	connecting    bool
+	Connecting    bool
 }
 
 type LedList struct {
@@ -81,13 +81,14 @@ type Led struct {
 }
 
 func (c *Client) Connect() {
-	if c.Socket == nil && c.Address != "" && !c.connecting {
-		c.connecting = true
+	log.Printf("Connect for %s called\n",c.Id)
+	if c.Socket == nil && c.Address != "" && !c.Connecting {
+		c.Connecting = true
 		var err error
 		log.Printf("%s connecting to %s\n", c.Id, c.Address)
 		c.Socket, err = net.Dial("tcp", c.Address)
 		LogError(err)
-		c.connecting = false
+		c.Connecting = false
 
 	}
 }
